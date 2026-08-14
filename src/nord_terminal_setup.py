@@ -233,6 +233,88 @@ def install():
         print("  Please close all terminals and open a new one manually.")
 
 
+def revert():
+    """Restore the original terminal configuration from backup."""
+    backup_dir = Path.home() / "nord-backup"
+    backup_file = backup_dir / "default_profile.conf"
+
+    if not backup_file.exists():
+        print(" No backup found. Nothing to revert.")
+        print("     (backup would be at ~/nord-backup/default_profile.conf)")
+        sys.exit(1)
+
+    print(" Restoring default profile from backup...")
+    try:
+        subprocess.run(
+            ["dconf", "load", "/org/mate/terminal/profiles/default/"],
+            stdin=open(backup_file, "r"),
+            check=True,
+            text=True,
+        )
+        print(" Default profile restored successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f" Failed to restore profile: {e}")
+        sys.exit(1)
+
+    print(" Removing 'nord' from profile list...")
+    try:
+        # Get current list
+        list_cmd = ["gsettings", "get", "org.mate.terminal.global", "profile-list"]
+        result = subprocess.run(list_cmd, capture_output=True, text=True, check=True)
+        current_list = result.stdout.strip()
+
+        if "'nord'" in current_list:
+            # Remove 'nord' from list
+            profiles = current_list.strip("[]").replace("'", "").split(",")
+            profiles = [
+                p.strip() for p in profiles if p.strip() and p.strip() != "nord"
+            ]
+            new_list = "['" + "', '".join(profiles) + "']" if profiles else "[]"
+            subprocess.run(
+                [
+                    "gsettings",
+                    "set",
+                    "org.mate.terminal.global",
+                    "profile-list",
+                    new_list,
+                ],
+                check=True,
+            )
+            print(" -> 'nord' removed from profile list.")
+        else:
+            print(" -> 'nord' not in profile list.")
+    except subprocess.CalledProcessError as e:
+        print(f" Could not update profile list: {e}")
+        # Continue anyway, this is not critical
+
+    # Ensure default is set back to 'default'
+    print(" Setting 'default' as default profile...")
+    try:
+        subprocess.run(
+            [
+                "gsettings",
+                "set",
+                "org.mate.terminal.global",
+                "default-profile",
+                "'default'",
+            ],
+            check=True,
+        )
+        print(" -> 'default' set as default profile.")
+    except subprocess.CalledProcessError as e:
+        print(f" Could not set default profile: {e}")
+
+    print(" Restarting terminal...")
+    try:
+        subprocess.run(["pkill", "mate-terminal"], check=False)
+        print(
+            " Terminal restarted. Open a new terminal (Ctrl+Alt+T) to see the changes."
+        )
+    except Exception as e:
+        print(f" Could not restart the terminal automatically: {e}")
+        print(" Please close all terminals and open a new one manually")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Install Nord color palette in mate-terminal"
@@ -250,10 +332,10 @@ def main():
 
     if args.dry_run:
         dry_run()
-        # Future: call dry_run() function
     elif args.revert:
         print("Reverting to original configuration...")
-        # Future: call revert() function
+        check_dependencies()
+        revert()
     else:
         print("Installing Nord...")
         check_dependencies()
