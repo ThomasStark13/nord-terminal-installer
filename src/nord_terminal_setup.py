@@ -94,6 +94,27 @@ def backup_default_profile():
         sys.exit(1)
 
 
+def dry_run():
+    """Simulate the installation without making any changes."""
+    print("🔍 [DRY RUN] Simulation mode. No changes will be made.\n")
+
+    # Check dependencies (just to verify)
+    check_dependencies()
+
+    print("\n Commands that would be executed:")
+    print("  1. Backup current profile to ~/nord-backup/default_profile.conf")
+    print("  2. Write Nord colors to /org/mate/terminal/profiles/nord/")
+    print("     - background-color:  #2E2E34344040")
+    print("     - foreground-color:  #D8D8DEDEE9E9")
+    print("     - palette:           (16 Nord colors)")
+    print("     - visible-name:      'Nord'")
+    print("     - use-theme-colors:  false")
+    print("  3. Add 'nord' to profile list")
+    print("  4. Set 'nord' as default profile")
+    print("  5. Restart terminal (pkill mate-terminal)")
+    print("\n Dry run completed. No actual changes were made.")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Install Nord color palette in mate-terminal"
@@ -110,7 +131,7 @@ def main():
     args = parser.parse_args()
 
     if args.dry_run:
-        print("[DRY RUN] Simulation mode. No changes will be made.")
+        dry_run()
         # Future: call dry_run() function
     elif args.revert:
         print("Reverting to original configuration...")
