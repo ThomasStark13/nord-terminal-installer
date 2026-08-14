@@ -1,12 +1,10 @@
 # Nord Terminal Installer
 
+![Nord Terminal Banner](screenshots/banner-readme.png)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Version](https://img.shields.io/badge/python-3.6%2B-blue)](https://www.python.org/)
 [![Linux Mint](https://img.shields.io/badge/Linux%20Mint-MATE-brightgreen)](https://linuxmint.com/)
-
-> One-command Nord theme installer for Linux Mint MATE terminal
-
-![Nord Terminal Demo](screenshots/demo.gif)
 
 ---
 
