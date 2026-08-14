@@ -115,6 +115,124 @@ def dry_run():
     print("\n Dry run completed. No actual changes were made.")
 
 
+def install():
+    """Install the Nord color palette in mate-terminal."""
+    print("Reading current settings from default profile...")
+
+    # Read current font and other settings from default profile
+    def read_default_setting(key):
+        """Read a setting from the default profile using dconf."""
+        cmd = ["dconf", "read", f"/org/mate/terminal/profiles/default/{key}"]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            return result.stdout.strip()
+        except subprocess.CalledProcessError:
+            return None
+
+    # Get current font (or fallback)
+    font = read_default_setting("font")
+    if font:
+        print(f"    -> Using existing font: {font}")
+    else:
+        font = "'Monospace 12'"
+        print(" -> Font not found, using fallback: Monospace 12")
+
+    # Get current cursor shape
+    cursor_shape = read_default_setting("cursor-shape") or "'ibeam'"
+    cursor_blink = read_default_setting("cursor-blink-mode") or "'off'"
+    scrollbar_pos = read_default_setting("scrollbar-position") or "'hidden'"
+    silent_bell = read_default_setting("silent-bell") or "true"
+    bold_same_fg = read_default_setting("bold-color-same-as-fg") or "true"
+
+    print("Writing Nord colors to dconf...")
+
+    # Write all keys under /org/mate/terminal/profiles/nord
+    dconf_cmds = [
+        ("visible-name", "'Nord'"),
+        ("background-color", f"'{NORD_COLORS["nord0"]}'"),
+        ("foreground-color", f"'{NORD_COLORS["nord4"]}'"),
+        ("palette", f"'{NORD_PALETTE}'"),
+        ("use-theme-colors", "false"),
+        ("font", font),
+        ("use-system-font", "false"),
+        ("cursor-shape", cursor_shape),
+        ("cursor-blink-mode", cursor_blink),
+        ("scrollbar-position", scrollbar_pos),
+        ("silent-bell", silent_bell),
+        ("bold-color-same-as-fg", bold_same_fg),
+    ]
+
+    for key, value in dconf_cmds:
+        cmd = ["dconf", "write", f"/org/mate/terminal/profiles/nord/{key}", value]
+        print(f"   → Running: {' '.join(cmd)}")
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to write {key}: {e.stderr}")
+            sys.exit(1)
+
+    print("Nord profile created successfully.")
+
+    print("Activating Nord profile...")
+    # Add 'nord' to the list of profiles if not already present
+    list_cmd = ["gsettings", "get", "org.mate.terminal.global", "profile-list"]
+    try:
+        result = subprocess.run(list_cmd, capture_output=True, text=True, check=True)
+        current_list = result.stdout.strip()
+        if "'nord'" not in current_list:
+            # Append 'nord' to the list
+            if current_list == "[]":
+                new_list = "['nord']"
+            else:
+                # Remove brackets and add 'nord'
+                profiles = current_list.strip("[]").replace("'", "").split(",")
+                profiles = [p.strip() for p in profiles if p.strip()]
+                if "nord" not in profiles:
+                    profiles.append("nord")
+                new_list = "['" + "', '".join(profiles) + "']"
+            subprocess.run(
+                [
+                    "gsettings",
+                    "set",
+                    "org.mate.terminal.global",
+                    "profile-list",
+                    new_list,
+                ],
+                check=True,
+            )
+            print(" -> 'nord' added to profile list.")
+        else:
+            print(" -> 'nord' already in profile list.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to update profile list: {e}")
+        sys.exit(1)
+
+    # Set 'nord' as default profile
+    try:
+        subprocess.run(
+            [
+                "gsettings",
+                "set",
+                "org.mate.terminal.global",
+                "default-profile",
+                "'nord'",
+            ],
+            check=True,
+        )
+        print(" -> 'nord' set as default profile.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to set default profile: {e}")
+        sys.exit(1)
+
+    print("Restarting terminal to apply changes...")
+    try:
+        subprocess.run(["pkill", "mate-terminal"], check=False)
+        print(" Terminal restarted. Open a new terminal (Ctrl+Alt+T) to see Nord.")
+    except Exception as e:
+        print(f" Could not restart terminal automatically: {e}")
+        print("  Please close all terminals and open a new one manually.")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Install Nord color palette in mate-terminal"
@@ -140,7 +258,7 @@ def main():
         print("Installing Nord...")
         check_dependencies()
         backup_default_profile()
-        # Future: call install() function
+        install()
 
 
 if __name__ == "__main__":
