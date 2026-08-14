@@ -1,0 +1,16 @@
+# Cache de Python (archivos compilados)
+__pycache__/
+*.pyc
+*.pyo
+
+# Nuestros backups locales (no subir la configuración personal)
+nord-backup/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos del editor (si usas VS Code o vim)
+.vscode/
+*.swp
+*.swo
