@@ -8,6 +8,7 @@ import argparse
 import subprocess
 import os
 import sys
+import shutil
 from pathlib import Path
 
 # Nord color palette in dconf format (each hex component is doubled)
@@ -42,6 +43,28 @@ NORD_PALETTE = (
 )
 
 
+def check_dependencies():
+    """
+    Check if required commands (dconf, gsettings) are available.
+    Exit with an error message if any is missing.
+    """
+    required_commands = ["dconf", "gsettings"]
+    missing = []
+
+    for cmd in required_commands:
+        if shutil.which(cmd) is None:
+            missing.append(cmd)
+
+    if missing:
+        print(f"Error: Required command(s) not found: {', '.join(missing)}")
+        print(
+            f"    Please install the package that provides them (usually 'dconf' and 'gsettings' come pre-installed)."
+        )
+        sys.exit(1)
+    else:
+        print("Dependencies check passed.")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Install Nord color palette in mate-terminal"
@@ -65,6 +88,7 @@ def main():
         # Future: call revert() function
     else:
         print("Installing Nord...")
+        check_dependencies()
         # Future: call install() function
 
 
