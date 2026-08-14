@@ -65,6 +65,35 @@ def check_dependencies():
         print("Dependencies check passed.")
 
 
+def backup_default_profile():
+    """
+    Create backup of the current default profile.
+    Returns the path to the back file.
+    """
+    backup_dir = Path.home() / "nord-backup"
+    backup_dir.mkdir(exist_ok=True)
+
+    backup_file = backup_dir / "default_profile.conf"
+
+    if backup_file.exists():
+        print(f"    Backup already exists at {backup_file}. Skipping backup.")
+        return backup_file
+
+    print("Creating backup of current default profile...")
+    try:
+        subprocess.run(
+            ["dconf", "dump", "/org/mate/terminal/profiles/default/"],
+            stdout=open(backup_file, "w"),
+            check=True,
+            text=True,
+        )
+        print(f"Backup saved to {backup_file}")
+        return backup_file
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to create backup: {e}")
+        sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Install Nord color palette in mate-terminal"
@@ -89,6 +118,7 @@ def main():
     else:
         print("Installing Nord...")
         check_dependencies()
+        backup_default_profile()
         # Future: call install() function
 
 
